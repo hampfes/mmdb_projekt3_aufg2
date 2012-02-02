@@ -26,7 +26,8 @@ import net.semanticmetadata.lire.utils.LuceneUtils;
 public class FileIndexing {
     
     private String testFilesPath = "./testFiles";
-    private DocumentBuilder builders[] = {DocumentBuilderFactory.getAutoColorCorrelogramDocumentBuilder(),
+    private DocumentBuilder builders[] = {
+            DocumentBuilderFactory.getAutoColorCorrelogramDocumentBuilder(),
             DocumentBuilderFactory.getColorStructureDescriptorDocumentBuilder(),
             DocumentBuilderFactory.getScalableColorBuilder(),
             DocumentBuilderFactory.getCEDDDocumentBuilder(),
@@ -50,20 +51,20 @@ public class FileIndexing {
     		ImageSearcherFactory.createFCTHImageSearcher(10),
     		ImageSearcherFactory.createGaborImageSearcher(10),
     		ImageSearcherFactory.createJCDImageSearcher(10),
-    		ImageSearcherFactory.createJpegCoefficientHistogramImageSearcher(10)
-    };
-    private static String indexPaths[] = {"AutoColorCorrelagram",
-            "ColorStructureDescriptor",
-            "ScalableColor",
-            "CEDD",
-            "ColorHistrogram",
-            "ColorLayout",
-            "Tamura",
-            "EdgeHistogram",
-            "FCTH",
-            "Gabor",
-            "JCD",
-            "JpegCoefficientHistogram"};
+    		ImageSearcherFactory.createJpegCoefficientHistogramImageSearcher(10)};
+    private static String indexPaths[] = {
+        "AutoColorCorrelagram",
+        "ColorStructureDescriptor",
+        "ScalableColor",
+        "CEDD",
+        "ColorHistrogram",
+        "ColorLayout",
+        "Tamura",
+        "EdgeHistogram",
+        "FCTH",
+        "Gabor",
+        "JCD",
+        "JpegCoefficientHistogram" };
     private ArrayList<String> images;
     
     
@@ -77,14 +78,16 @@ public class FileIndexing {
             fi.createIndex();
             System.out.println("Indexing finished.");
             
-            for (int i = 0; i < searchers.length; i++) {
-                fi.searchFiles(searchers[i], indexPaths[i]);
-            }
+            fi.testSearch();
+//            for (int i = 0; i < searchers.length; i++) {
+//                fi.searchFiles(searchers[i], indexPaths[i]);
+//            }
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
+    
     
     /**
      * Creates an index with an extensive list of global features.
@@ -94,10 +97,11 @@ public class FileIndexing {
     private void createIndex() throws IOException {
         System.out.println("-< Getting files to index >--------------");
         images = FileUtils.getAllImages(new File(testFilesPath), true);
-        for (int i = 0; i < builders.length; i++) {
-            indexFiles(images, builders[i], indexPaths[i]);
-        }
+//        for (int i = 0; i < builders.length; i++) {
+//            indexFiles(images, builders[i], indexPaths[i]);
+//        }
     }
+    
     
     private void indexFiles(ArrayList<String> images, DocumentBuilder builder, String indexPath) throws IOException {
         System.out.println("-< Indexing " + images.size() + " files with " + indexPath + " >--------------");
@@ -121,6 +125,7 @@ public class FileIndexing {
         iw.close();
     }
     
+    
     private void searchFiles(ImageSearcher searcher, String prefix) throws IOException {
     	// copy index to ram to be much faster ...
         IndexReader reader = IndexReader.open(new RAMDirectory(FSDirectory.open(new File("index-" + prefix))), true);
@@ -140,7 +145,7 @@ public class FileIndexing {
 //            String file = testFilesPath + "/" + id;
         	FileInputStream imageStream = new FileInputStream(testFilesPath + "/" + i + ".jpg");
             BufferedImage image = ImageIO.read(imageStream);
-            System.out.println("Hšhe: " + image.getHeight() + " Breite: " + image.getWidth());
+//            System.out.println("Höhe: " + image.getHeight() + " Breite: " + image.getWidth());
             ImageSearchHits hits = searcher.search(image, reader);
             System.out.println("Treffer Anzahl: " + hits.length());
             int goodOnes = 0;
@@ -150,7 +155,7 @@ public class FileIndexing {
             for (int j = 0; j < hits.length(); j++) {
                 Document d = hits.doc(j);
                 String hitsId = d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0];
-//                System.out.println("Treffer ID: " + hitsId);
+                System.out.println("Treffer ID: " + hitsId);
                 Matcher matcher = p.matcher(hitsId);
                 if (matcher.find())
                     hitsId = matcher.group(1);
@@ -198,6 +203,70 @@ public class FileIndexing {
 
         }
         System.out.println();
+    }
+    
+    public void testSearch() throws IOException {
+        int numsearches = 1;
+        for (int j = 0; j < indexPaths.length; j++) {
+            IndexReader reader = IndexReader.open(FSDirectory.open(new File("index-" + indexPaths[j])));
+            int numDocs = reader.numDocs();
+            System.out.println(indexPaths[j] + " numDocs = " + numDocs);
+            ImageSearcher searcher = searchers[j];
+            FileInputStream imageStream = new FileInputStream(images.get(0));
+            BufferedImage bimg = ImageIO.read(imageStream);
+            ImageSearchHits hits = null;
+            long time = System.currentTimeMillis();
+            for (int i = 0; i < numsearches; i++) {
+                hits = searcher.search(bimg, reader);
+            }
+            time = System.currentTimeMillis() - time;
+            System.out.println(((float) time / (float) numsearches)
+                    + " ms per search with image, averaged on " + numsearches);
+            for (int i = 0; i < 5; i++) {
+                System.out.println(hits.score(i)
+                        + ": "
+                        + hits.doc(i)
+                                .getFieldable(
+                                        DocumentBuilder.FIELD_NAME_IDENTIFIER)
+                                .stringValue());
+            }
+            Document document = hits.doc(0);
+            time = System.currentTimeMillis();
+            for (int i = 0; i < numsearches; i++) {
+                hits = searcher.search(document, reader);
+            }
+            time = System.currentTimeMillis() - time;
+            System.out.println(((float) time / (float) numsearches)
+                    + " ms per search with document, averaged on "
+                    + numsearches);
+            for (int i = 0; i < 5; i++) {
+                System.out.println(hits.score(i)
+                        + ": "
+                        + hits.doc(i)
+                                .getFieldable(
+                                        DocumentBuilder.FIELD_NAME_IDENTIFIER)
+                                .stringValue());
+            }
+
+            document = builders[j].createDocument(bimg,
+                    images.get(0));
+            time = System.currentTimeMillis();
+            for (int i = 0; i < numsearches; i++) {
+                hits = searcher.search(document, reader);
+            }
+            time = System.currentTimeMillis() - time;
+            System.out.println(((float) time / (float) numsearches)
+                    + " ms per search with document, averaged on "
+                    + numsearches);
+            for (int i = 0; i < 10; i++) {
+                System.out.println(hits.score(i)
+                        + ": "
+                        + hits.doc(i)
+                                .getFieldable(
+                                        DocumentBuilder.FIELD_NAME_IDENTIFIER)
+                                .stringValue());
+            }
+        }
     }
     
 }
