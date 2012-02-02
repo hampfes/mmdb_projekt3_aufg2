@@ -36,7 +36,7 @@ public class IndexingMain {
 		
 		TestWang test = new TestWang();
 		try {
-			test.setUp();
+//			test.setUp();
 //			test.testIndexWang();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -44,7 +44,7 @@ public class IndexingMain {
 		}
 		
 		
-//		IndexingMain indexing = new IndexingMain();
+		IndexingMain indexing = new IndexingMain();
 //		DocumentBuilder builder = DocumentBuilderFactory.getColorStructureDescriptorDocumentBuilder();
 //		DocumentBuilder builder = DocumentBuilderFactory.getCEDDDocumentBuilder();
 //		indexing.createIndex(builder);
@@ -53,7 +53,7 @@ public class IndexingMain {
 //		indexing.CEDDSearcher();
 		
 		// Aufgabe 2a
-//		indexing.createIndex();
+		indexing.createIndex();
 		
 		// Aufgabe 2b
 		// Beispielbild
@@ -61,7 +61,7 @@ public class IndexingMain {
         BufferedImage image = ImageIO.read(imageStream);
         // Anzahl der Ergebnisse
 		int countResults = 5;
-//		indexing.queryByExample(image, countResults);
+		indexing.queryByExample(image, countResults);
 	}
 	
 	// Query-by-Example: Es muss eine Bilddatei angegeben werden und die Anzahl der Ergebnisse.
