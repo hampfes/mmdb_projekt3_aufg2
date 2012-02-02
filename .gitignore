@@ -1,0 +1,8 @@
+.settings/*
+bin/*
+test-index/*
+test-index-small/*
+.project
+desktop.ini
+.dropbox
+.classpath
